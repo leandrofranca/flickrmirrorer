@@ -40,20 +40,23 @@
 
 import argparse
 import datetime
-import dateutil.parser
 import errno
 import glob
 import math
 import os
-import pkg_resources
-import requests
 import shutil
 import signal
-import six
 import sys
 import time
 import webbrowser
+
+import dateutil.parser
+import pkg_resources
+import requests
+import six
+
 from six.moves import urllib
+
 
 try:
     # We try importing simplejson first because it's faster than json
@@ -380,7 +383,7 @@ class FlickrMirrorer(object):
             # in case of failure part-way through.
             with open(self.tmp_filename, 'wb') as tmp_file:
                 # Use 1 MiB chunks.
-                for chunk in request.iter_content(2**20):
+                for chunk in request.iter_content(2 ** 20):
                     tmp_file.write(chunk)
             os.rename(self.tmp_filename, photo_filename)
         else:
@@ -392,7 +395,7 @@ class FlickrMirrorer(object):
             self._progress('Updated metadata for %s' % photo_basename)
         else:
             self._verbose(
-                'Skipping metadata for %s because we already have it' %
+                'Skipping metadata for %s because we already have it' % 
                 photo_basename)
 
         photo_datetime = get_photo_datetime(photo)
@@ -475,7 +478,7 @@ class FlickrMirrorer(object):
                 photo_basename = self._get_photo_basename(photo)
                 photo_fullname = os.path.join(self.photostream_dir, photo_basename)
                 photo_relname = os.path.relpath(photo_fullname, album_dir)
-                symlink_basename = '%s_%s' % (str(i+1).zfill(digits), photo_basename)
+                symlink_basename = '%s_%s' % (str(i + 1).zfill(digits), photo_basename)
                 symlink_filename = os.path.join(album_dir, symlink_basename)
                 os.symlink(photo_relname, symlink_filename)
 
@@ -595,7 +598,11 @@ class FlickrMirrorer(object):
         mediatype = photo['media']
 
         if mediatype == 'photo':
-            return '%s.%s' % (photo['id'], photo['originalformat'])
+            if photo['title'].lower().endswith('.' + photo['originalformat'].lower()):
+                return '%s' % (photo['title'])
+            else:
+                return '%s.%s' % (photo['title'], photo['originalformat'])
+#             return '%s.%s' % (photo['id'], photo['originalformat'])
 
         if mediatype == 'video':
             # TODO: If Flickr begins including the file extension in the
@@ -604,7 +611,7 @@ class FlickrMirrorer(object):
             # The photo metadata for videos does not indicate the file
             # extension. If we've already saved the video locally then
             # we can get the basename from the local file.
-            for f in glob.iglob(os.path.join(self.photostream_dir, photo['id']) + '*'):
+            for f in glob.iglob(os.path.join(self.photostream_dir, photo['title']) + '*'):
                 if not f.endswith('metadata'):
                     return os.path.basename(f)
 
